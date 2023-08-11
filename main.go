@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -19,13 +20,13 @@ const (
 )
 
 type item struct {
-	text        string    `json:"text"`
-	createdAt   time.Time `json:"createdAt,omitempty"`
-	completedAt time.Time `json:"completedAt,omitempty"`
+	text        string
+	createdAt   time.Time
+	completedAt time.Time
 }
 
 type data struct {
-	items []item `json:"items,omitempty"`
+	items []item
 }
 
 type model struct {
@@ -41,7 +42,11 @@ type model struct {
 }
 
 func main() {
-	p := tea.NewProgram(initialModel())
+	session := flag.String("s", "data", "Create or use a custom session")
+
+	flag.Parse()
+
+	p := tea.NewProgram(initialModel(*session))
 
 	m, err := p.Run()
 	if err != nil {
@@ -50,18 +55,18 @@ func main() {
 	}
 
 	if m, ok := m.(model); ok {
-		saveToFile(m.items)
+		saveToFile(*session, m.items)
 	}
 }
 
-func initialModel() model {
+func initialModel(session string) model {
 	ti := textinput.New()
 	ti.Placeholder = "To do item text"
 	ti.CharLimit = 255
 	ti.Cursor.Blink = true
 	ti.Prompt = ""
 
-	items := readFromFile()
+	items := readFromFile(session)
 
 	return model{
 		keys:       keys,
@@ -79,14 +84,8 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Teardown() tea.Cmd {
-	saveToFile(m.items)
-
-	return nil
-}
-
-func readFromFile() []item {
-	filename := "data"
+func readFromFile(session string) []item {
+	filename := fmt.Sprintf("%s/.tdly/%s", os.Getenv("HOME"), session)
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -94,36 +93,46 @@ func readFromFile() []item {
 	}
 	defer file.Close()
 
-  scanner := bufio.NewScanner(file)
-  scanner.Split(bufio.ScanLines)
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
 
 	items := []item{}
 
-  for scanner.Scan() {
-    arr := strings.Split(scanner.Text(), ";")
+	for scanner.Scan() {
+		arr := strings.Split(scanner.Text(), ";")
 
-    createdAt, err := time.Parse(time.RFC3339Nano, arr[1])
-    if err != nil {
-      createdAt = time.Now()
-    }
+		createdAt, err := time.Parse(time.RFC3339Nano, arr[1])
+		if err != nil {
+			createdAt = time.Now()
+		}
 
-    completedAt, err := time.Parse(time.RFC3339Nano, arr[2])
-    if err != nil {
-      completedAt = time.Time{}
-    }
+		completedAt, err := time.Parse(time.RFC3339Nano, arr[2])
+		if err != nil {
+			completedAt = time.Time{}
+		}
 
-    items = append(items, item{
-      text: arr[0],
-      createdAt: createdAt,
-      completedAt: completedAt,
-    })
-  }
+		items = append(items, item{
+			text:        arr[0],
+			createdAt:   createdAt,
+			completedAt: completedAt,
+		})
+	}
 
 	return items
 }
 
-func saveToFile(items []item) {
-	filename := "data"
+func saveToFile(session string, items []item) {
+	dataDir := fmt.Sprintf("%s/.tdly", os.Getenv("HOME"))
+
+	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+		err = os.Mkdir(dataDir, os.ModeDir)
+		if err != nil {
+			fmt.Println("Error creating data directory:", err)
+			return
+		}
+	}
+
+	filename := fmt.Sprintf("%s/%s", dataDir, session)
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -131,21 +140,21 @@ func saveToFile(items []item) {
 	}
 	defer file.Close()
 
-  s := ""
+	s := ""
 
-  for _, item := range(items) {
-    completedAt := ""
+	for _, item := range items {
+		completedAt := ""
 
-    if !item.completedAt.IsZero() {
-      completedAt = item.completedAt.Format(time.RFC3339Nano)
-    }
+		if !item.completedAt.IsZero() {
+			completedAt = item.completedAt.Format(time.RFC3339Nano)
+		}
 
-    s += fmt.Sprintf("%s;%s;%s\n", 
-      item.text, 
-      item.createdAt.Format(time.RFC3339Nano), 
-      completedAt,
-    )
-  }
+		s += fmt.Sprintf("%s;%s;%s\n",
+			item.text,
+			item.createdAt.Format(time.RFC3339Nano),
+			completedAt,
+		)
+	}
 
 	_, err = file.WriteString(s)
 	if err != nil {
@@ -181,9 +190,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.items[m.cursor] = item{text: text, createdAt: time.Now()}
 			}
 
-      if msg.String() == ";" {
-        return m, cmd
-      }
+			if msg.String() == ";" {
+				return m, cmd
+			}
 
 			m.textInput, cmd = m.textInput.Update(msg)
 
@@ -253,7 +262,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.items = append(m.items[:m.cursor], m.items[m.cursor+1:]...)
 
-			if m.cursor >= len(m.items) || m.cursor == 0 {
+			if m.cursor >= len(m.items) {
 				m.cursor--
 			}
 		case key.Matches(msg, m.keys.Quit):
