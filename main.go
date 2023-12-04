@@ -125,7 +125,7 @@ func saveToFile(session string, items []item) {
 	dataDir := fmt.Sprintf("%s/.tdly", os.Getenv("HOME"))
 
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		err = os.Mkdir(dataDir, os.ModeDir)
+		err = os.Mkdir(dataDir, 0777)
 		if err != nil {
 			fmt.Println("Error creating data directory:", err)
 			return
