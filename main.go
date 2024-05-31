@@ -18,39 +18,7 @@ func initDatabase(url string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	err = setupDatabase(db)
-	if err != nil {
-		return nil, err
-	}
-
 	return db, nil
-}
-
-func setupDatabase(db *sql.DB) error {
-	boardStmt := "CREATE TABLE IF NOT EXISTS boards (" +
-		"\n\tid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL," +
-		"\n\ttitle TEXT NOT NULL," +
-		"\n\tcreated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP" +
-		"\n)"
-	_, err := db.Exec(boardStmt)
-	if err != nil {
-		return err
-	}
-
-	itemStmt := "CREATE TABLE IF NOT EXISTS items (" +
-		"\n\tid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ," +
-		"\n\tboard_id INTEGER NOT NULL," +
-		"\n\ttext TEXT NOT NULL," +
-		"\n\tcompleted BOOLEAN NOT NULL DEFAULT FALSE," +
-		"\n\tcreated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-		"\n\n\tFOREIGN KEY(board_id) REFERENCES boards(id) ON DELETE CASCADE" +
-		"\n)"
-	_, err = db.Exec(itemStmt)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func main() {
