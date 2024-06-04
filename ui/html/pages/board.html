@@ -36,11 +36,6 @@
 
 	li:hover {
 		cursor: pointer;
-		text-decoration: line-through;
-	}
-
-	li:hover.completed {
-		text-decoration: none;
 	}
 </style>
 {{ end }}
@@ -51,9 +46,7 @@
 </header>
 <main>
 	<ul id="item-list">
-		{{ range .Items }}
-		{{ template "item" . }}
-		{{ end }}
+		{{ range .Items }}{{ template "item" . }}{{ end }}
 	</ul>
 	<form hx-post="/boards/{{ .Board.ID }}/items" hx-target="#item-list" hx-swap="beforeend"
 		hx-on::after-request="if(event.detail.successful) this.reset()">

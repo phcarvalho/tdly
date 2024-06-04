@@ -1,5 +1,5 @@
 {{ define "item" }}
-<li {{ if not .CompletedAt.IsZero }}class="completed" {{ end }} hx-post="/boards/{{ .BoardID }}/items/{{ .ID }}/toggle"
+<li class="{{ if not .CompletedAt.IsZero }}completed{{end}}" hx-post="/boards/{{ .BoardID }}/items/{{ .ID }}/toggle"
 	hx-swap="outerHTML">
 	{{ .Text }}
 </li>

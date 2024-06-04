@@ -19,7 +19,7 @@ func (a *application) getServeMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", a.handleHomePage)
-	mux.HandleFunc("GET /boards/{id}", a.handleBoardPage)
+	mux.HandleFunc("GET /b/{id}", a.handleBoardPage)
 	mux.HandleFunc("POST /boards", a.handleBoardCreate)
 	mux.HandleFunc("POST /boards/{id}/items", a.handleItemCreate)
 	mux.HandleFunc("POST /boards/{id}/items/{itemID}/toggle", a.handleItemToggle)
@@ -55,7 +55,7 @@ func (a *application) handleBoardCreate(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/boards/%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/b/%d", id), http.StatusSeeOther)
 }
 
 func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
