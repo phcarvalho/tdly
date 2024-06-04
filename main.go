@@ -2,77 +2,45 @@ package main
 
 import (
 	"database/sql"
-	"github.com/phcarvalho/tdly/internal/models"
 	"log"
+	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/phcarvalho/tdly/internal/services"
 )
 
-func initDatabase(url string) (*sql.DB, error) {
-	if url == "" {
-		url = "./data/data.db"
-	}
+type application struct {
+	DB      *sql.DB
+	Service *services.Service
+	Router  *http.ServeMux
+}
 
-	db, err := sql.Open("sqlite3", url+"?_journal=WAL&_timeout=3000&_fk=true")
+func (a *application) init() {
+	db, err := sql.Open("sqlite3", "./data.db?_journal=WAL&_timeout=3000&_fk=true")
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 
-	return db, nil
+	a.DB = db
+	a.Service = services.NewService(db)
+	a.Router = a.getServeMux()
+
+	log.Println("starting application")
+}
+
+func (a *application) close() {
+	log.Println("exiting application")
+	a.DB.Close()
 }
 
 func main() {
-	db, err := initDatabase("./data/data.db")
-	if err != nil {
+	app := &application{}
+	app.init()
+
+	// TODO: handle graceful shutdowns and interrupts
+	defer app.close()
+
+	if err := http.ListenAndServe(":4000", app.Router); err != nil {
 		log.Fatal(err)
-	}
-	defer db.Close()
-
-	boardModel := &models.BoardModel{DB: db}
-	itemModel := &models.ItemModel{DB: db}
-
-	boardID, err := boardModel.Insert("My new board")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	board, err := boardModel.GetByID(boardID)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("Board %d: %s\n", board.ID, board.Title)
-	log.Println("++++++++++++++++++++++")
-
-	_, err = itemModel.Insert(boardID, "That's my first item")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = itemModel.Insert(boardID, "That's my second item")
-	if err != nil {
-		log.Fatal(err)
-	}
-	id, err := itemModel.Insert(boardID, "That's my third item")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = itemModel.ToggleByID(id)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	items, err := itemModel.GetByBoardID(boardID)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, item := range items {
-		mark := " "
-		if item.Completed {
-			mark = "x"
-		}
-
-		log.Printf("- [%s] %s (%d)\n", mark, item.Text, item.ID)
 	}
 }

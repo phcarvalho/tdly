@@ -1,0 +1,46 @@
+{{ define "title" }}Tdly{{ end }}
+
+{{ define "head" }}
+<style>
+	main {
+		width: 100%;
+		min-height: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 20px;
+	}
+
+	h1 {
+		font-size: 100px;
+	}
+
+	button {
+		opacity: 100%;
+		outline: 0;
+		border: solid #846358 2px;
+		border-radius: 8px;
+		background: #eaddd7;
+		padding: 12px 24px;
+		font-weight: 600;
+		color: #846358;
+		cursor: pointer;
+
+		transition: opacity ease-in 0.2s;
+	}
+
+	button:hover {
+		opacity: 70%;
+	}
+</style>
+{{end}}
+
+{{ define "body" }}
+<main>
+	<h1>Tdly</h1>
+	<form method="post" action="/boards">
+		<button type="submit">Create a Board</button>
+	</form>
+</main>
+{{ end }}

@@ -1,0 +1,18 @@
+{{ define "title" }}Tdly - Board {{ .Board.ID }}{{ end }}
+
+{{ define "head" }} {{ end }}
+
+{{ define "body" }}
+<main>
+	<h1>{{ .Board.Title }}</h1>
+	<ul>
+		{{ range .Items }}
+		<li>
+			{{ .Text }}
+		</li>
+		{{ else }}
+		No item yet :(
+		{{ end }}
+	</ul>
+</main>
+{{ end }}
