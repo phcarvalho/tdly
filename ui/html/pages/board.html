@@ -1,0 +1,68 @@
+{{ define "title" }}Tdly - {{ .Board.Title }}{{ end }}
+
+{{ define "head" }}
+<style>
+	body {
+		position: relative;
+	}
+
+	header {
+		padding: 20px 10px;
+		margin: 0 20px;
+		border-bottom: 2px solid #d2bab0;
+	}
+
+	main {
+		padding: 20px 30px;
+	}
+
+	footer {
+		position: absolute;
+		right: 30px;
+		bottom: 30px;
+	}
+
+	ul {
+		list-style: none;
+	}
+
+	li {
+		text-decoration: none;
+	}
+
+	li.completed {
+		text-decoration: line-through;
+	}
+
+	li:hover {
+		cursor: pointer;
+		text-decoration: line-through;
+	}
+
+	li:hover.completed {
+		text-decoration: none;
+	}
+</style>
+{{ end }}
+
+{{ define "body" }}
+<header>
+	<h1>{{ .Board.Title }}</h1>
+</header>
+<main>
+	<ul id="item-list">
+		{{ range .Items }}
+		{{ template "item" . }}
+		{{ end }}
+	</ul>
+	<form hx-post="/boards/{{ .Board.ID }}/items" hx-target="#item-list" hx-swap="beforeend"
+		hx-on::after-request="if(event.detail.successful) this.reset()">
+		<input name="text" id="text" placeholder="Add new item" />
+	</form>
+</main>
+<footer>
+	<a href="/">
+		Tdly
+	</a>
+</footer>
+{{ end }}

@@ -1,0 +1,6 @@
+{{ define "item" }}
+<li {{ if not .CompletedAt.IsZero }}class="completed" {{ end }} hx-post="/boards/{{ .BoardID }}/items/{{ .ID }}/toggle"
+	hx-swap="outerHTML">
+	{{ .Text }}
+</li>
+{{ end }}

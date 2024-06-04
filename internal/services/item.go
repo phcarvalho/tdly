@@ -7,6 +7,7 @@ import (
 
 type Item struct {
 	ID          int
+	BoardID     int
 	Text        string
 	CompletedAt time.Time
 }
@@ -16,7 +17,7 @@ type ItemService struct {
 }
 
 func (m *ItemService) GetByID(id int) (*Item, error) {
-	stmt := "SELECT id, text, completed_at FROM items" +
+	stmt := "SELECT id, board_id, text, completed_at FROM items" +
 		"\nWHERE id = ?"
 
 	row := m.DB.QueryRow(stmt, id)
@@ -27,7 +28,7 @@ func (m *ItemService) GetByID(id int) (*Item, error) {
 
 	var item Item
 	var completedAt sql.NullTime
-	err = row.Scan(&item.ID, &item.Text, &completedAt)
+	err = row.Scan(&item.ID, &item.BoardID, &item.Text, &completedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +41,7 @@ func (m *ItemService) GetByID(id int) (*Item, error) {
 }
 
 func (m *ItemService) GetByBoardID(boardID int) ([]*Item, error) {
-	stmt := "SELECT id, text, completed_at FROM items" +
+	stmt := "SELECT id, board_id, text, completed_at FROM items" +
 		"\nWHERE board_id = ?"
 
 	items := []*Item{}
@@ -52,7 +53,7 @@ func (m *ItemService) GetByBoardID(boardID int) ([]*Item, error) {
 	var completedAt sql.NullTime
 	for rows.Next() {
 		var item Item
-		err = rows.Scan(&item.ID, &item.Text, &completedAt)
+		err = rows.Scan(&item.ID, &item.BoardID, &item.Text, &completedAt)
 		if err != nil {
 			return items, err
 		}
