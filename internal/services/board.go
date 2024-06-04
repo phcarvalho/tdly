@@ -1,4 +1,4 @@
-package models
+package services
 
 import (
 	"database/sql"
@@ -9,11 +9,11 @@ type Board struct {
 	Title string
 }
 
-type BoardModel struct {
+type BoardService struct {
 	DB *sql.DB
 }
 
-func (m *BoardModel) GetByID(id int) (*Board, error) {
+func (m *BoardService) GetByID(id int) (*Board, error) {
 	var board Board
 	stmt := "SELECT id, title FROM boards" +
 		"\nWHERE id = ?"
@@ -33,7 +33,7 @@ func (m *BoardModel) GetByID(id int) (*Board, error) {
 	return &board, nil
 }
 
-func (m *BoardModel) Insert(title string) (int, error) {
+func (m *BoardService) Insert(title string) (int, error) {
 	stmt := "INSERT INTO boards(title) VALUES(?)"
 
 	res, err := m.DB.Exec(stmt, title)

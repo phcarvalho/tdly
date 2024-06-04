@@ -2,10 +2,10 @@ include .env
 export
 
 build:
-	@CGO_ENABLED=1 go build -o bin/todo-app .
+	@CGO_ENABLED=1 go build -o bin/tdly .
 
 run: build
-	@./bin/todo-app
+	@./bin/tdly
 
 migrate-up:
 	goose up
