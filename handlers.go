@@ -23,6 +23,7 @@ func (a *application) getServeMux() *http.ServeMux {
 	mux.HandleFunc("POST /boards", a.handleBoardCreate)
 	mux.HandleFunc("POST /boards/{id}/items", a.handleItemCreate)
 	mux.HandleFunc("POST /boards/{id}/items/{itemID}/toggle", a.handleItemToggle)
+	mux.HandleFunc("DELETE /boards/{id}/items/{itemID}/", a.handleItemDelete)
 
 	return mux
 }
@@ -149,6 +150,33 @@ func (a *application) handleItemCreate(w http.ResponseWriter, r *http.Request) {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	}
+}
+
+func (a *application) handleItemDelete(w http.ResponseWriter, r *http.Request) {
+	boardID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Board id '%s' is invalid", r.PathValue("id")), http.StatusBadRequest)
+		return
+	}
+
+	itemID, err := strconv.Atoi(r.PathValue("itemID"))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Item id '%s' is invalid", r.PathValue("itemID")), http.StatusBadRequest)
+		return
+	}
+
+	item, err := a.Service.Item.GetByID(itemID)
+	if err != nil || item.BoardID != boardID {
+		http.Error(w, fmt.Sprintf("Item %d not found", itemID), http.StatusNotFound)
+		return
+	}
+
+	err = a.Service.Item.DeleteByID(itemID)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (a *application) handleItemToggle(w http.ResponseWriter, r *http.Request) {

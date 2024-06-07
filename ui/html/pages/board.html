@@ -7,35 +7,96 @@
 	}
 
 	header {
-		padding: 20px 10px;
+		display: flex;
+		align-items: center;
+		height: 80px;
 		margin: 0 20px;
+		padding: 0 10px;
 		border-bottom: 2px solid #d2bab0;
 	}
 
 	main {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+
+		height: calc(100vh - 130px);
+		overflow: hidden;
 		padding: 20px 30px;
 	}
 
 	footer {
-		position: absolute;
-		right: 30px;
-		bottom: 30px;
+		height: 50px;
+		display: flex;
+		align-items: center;
+		justify-content: end;
+		padding: 0 10px;
+		padding-bottom: 10px;
+	}
+
+	footer>a {
+		color: #d2bab0;
+		font-size: 32px;
 	}
 
 	ul {
+		overflow-y: auto;
 		list-style: none;
 	}
 
 	li {
+		display: flex;
+		gap: 8px;
+		margin-bottom: 8px;
+	}
+
+	li>div {
+		cursor: pointer;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 8px;
+	}
+
+	li p {
 		text-decoration: none;
 	}
 
-	li.completed {
+	li div.spacer {
+		min-width: 45px;
+	}
+
+	li.completed p {
 		text-decoration: line-through;
 	}
 
-	li:hover {
+	li input[type="checkbox"] {
+		accent-color: #846358;
+	}
+
+	li>input:hover {
 		cursor: pointer;
+	}
+
+	li>button {
+		text-transform: uppercase;
+		cursor: pointer;
+		background: none;
+		outline: none;
+		border: none;
+
+		font-size: 16px;
+		font-weight: 600;
+		color: #ff8787;
+	}
+
+	form>input {
+		cursor: pointer;
+		outline: none;
+		border: none;
+		width: 100%;
+		background: none;
+		color: #846358;
 	}
 </style>
 {{ end }}
@@ -50,7 +111,7 @@
 	</ul>
 	<form hx-post="/boards/{{ .Board.ID }}/items" hx-target="#item-list" hx-swap="beforeend"
 		hx-on::after-request="if(event.detail.successful) this.reset()">
-		<input name="text" id="text" placeholder="Add new item" />
+		<input name="text" id="text" autocomplete="off" placeholder="Add a new item" />
 	</form>
 </main>
 <footer>

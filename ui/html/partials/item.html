@@ -1,6 +1,15 @@
 {{ define "item" }}
-<li class="{{ if not .CompletedAt.IsZero }}completed{{end}}" hx-post="/boards/{{ .BoardID }}/items/{{ .ID }}/toggle"
-	hx-swap="outerHTML">
-	{{ .Text }}
+<li id="item-{{ .ID }}" class="{{ if not .CompletedAt.IsZero }}completed{{end}}">
+	<div hx-post="/boards/{{ .BoardID }}/items/{{ .ID }}/toggle" hx-target="#item-{{ .ID }}" hx-swap="outerHTML">
+		<input type="checkbox" {{ if not .CompletedAt.IsZero }}checked="true" {{end}} hx-target="#item-{{ .ID }}" />
+		<p>{{ .Text }}</p>
+	</div>
+	{{ if not .CompletedAt.IsZero }}
+	<button hx-swap="outerHTML" hx-target="#item-{{ .ID }}" hx-delete="/boards/{{ .BoardID }}/items/{{ .ID }}">
+		Delete
+	</button>
+	{{ else }}
+	<div class="spacer"></div>
+	{{ end }}
 </li>
 {{ end }}

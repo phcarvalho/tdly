@@ -84,6 +84,14 @@ func (m *ItemService) Insert(boardID int, text string) (int, error) {
 	return int(id), nil
 }
 
+func (m *ItemService) DeleteByID(id int) error {
+	stmt := "DELETE FROM items" +
+		"\nWHERE id = ?"
+
+	_, err := m.DB.Exec(stmt, id)
+	return err
+}
+
 func (m *ItemService) ToggleByID(id int) error {
 	stmt := "UPDATE items" +
 		"\nSET completed_at = (CASE " +
@@ -92,9 +100,5 @@ func (m *ItemService) ToggleByID(id int) error {
 		"\nWHERE id = ?"
 
 	_, err := m.DB.Exec(stmt, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
