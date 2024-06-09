@@ -10,7 +10,7 @@ import (
 	"github.com/phcarvalho/tdly/internal/services"
 )
 
-type boardData struct {
+type boardPageData struct {
 	Board *services.Board
 	Items []*services.Item
 }
@@ -21,11 +21,20 @@ func (a *application) getServeMux() *http.ServeMux {
 	mux.HandleFunc("GET /", a.handleHomePage)
 	mux.HandleFunc("GET /b/{id}", a.handleBoardPage)
 	mux.HandleFunc("POST /boards", a.handleBoardCreate)
-	mux.HandleFunc("POST /boards/{id}/items", a.handleItemCreate)
-	mux.HandleFunc("POST /boards/{id}/items/{itemID}/toggle", a.handleItemToggle)
-	mux.HandleFunc("DELETE /boards/{id}/items/{itemID}/", a.handleItemDelete)
+	mux.HandleFunc("POST /items", a.handleItemCreate)
+	mux.HandleFunc("POST /items/{id}/toggle", a.handleItemToggle)
+	mux.HandleFunc("DELETE /items/{id}/", a.handleItemDelete)
 
 	return mux
+}
+
+func getBoardID(r *http.Request) (string, error) {
+	cookie, err := r.Cookie("board")
+	if err != nil {
+		return "", err
+	}
+
+	return cookie.Value, nil
 }
 
 func (a *application) handleHomePage(w http.ResponseWriter, r *http.Request) {
@@ -49,35 +58,42 @@ func (a *application) handleHomePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) handleBoardCreate(w http.ResponseWriter, r *http.Request) {
-	id, err := a.Service.Board.Insert("My new board")
+	id, err := a.Service.Config.GetNextID()
 	if err != nil {
-		log.Print(err.Error())
+		log.Println(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/b/%d", id), http.StatusSeeOther)
+	err = a.Service.Board.Insert(id)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/b/%s", id), http.StatusSeeOther)
 }
 
 func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	if id == "" {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	idNumber, err := strconv.Atoi(id)
-	if err != nil {
-		http.Error(w, "Id should be a number", http.StatusBadRequest)
-		return
-	}
-
-	board, err := a.Service.Board.GetByID(idNumber)
+	board, err := a.Service.Board.GetByID(id)
 	if err != nil {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
+
+	cookie := http.Cookie{
+		Name:     "board",
+		Value:    id,
+		Path:     "/",
+		MaxAge:   0,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, &cookie)
 
 	items, err := a.Service.Item.GetByBoardID(board.ID)
 	if err != nil {
@@ -86,7 +102,7 @@ func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := boardData{
+	data := boardPageData{
 		Board: board,
 		Items: items,
 	}
@@ -112,9 +128,9 @@ func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) handleItemCreate(w http.ResponseWriter, r *http.Request) {
-	boardID, err := strconv.Atoi(r.PathValue("id"))
+	boardID, err := getBoardID(r)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Board id '%s' is invalid", r.PathValue("id")), http.StatusBadRequest)
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -153,15 +169,15 @@ func (a *application) handleItemCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) handleItemDelete(w http.ResponseWriter, r *http.Request) {
-	boardID, err := strconv.Atoi(r.PathValue("id"))
+	boardID, err := getBoardID(r)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Board id '%s' is invalid", r.PathValue("id")), http.StatusBadRequest)
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
-	itemID, err := strconv.Atoi(r.PathValue("itemID"))
+	itemID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Item id '%s' is invalid", r.PathValue("itemID")), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Item id '%s' is invalid", r.PathValue("id")), http.StatusBadRequest)
 		return
 	}
 
@@ -180,15 +196,15 @@ func (a *application) handleItemDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) handleItemToggle(w http.ResponseWriter, r *http.Request) {
-	boardID, err := strconv.Atoi(r.PathValue("id"))
+	boardID, err := getBoardID(r)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Board id '%s' is invalid", r.PathValue("id")), http.StatusBadRequest)
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
-	itemID, err := strconv.Atoi(r.PathValue("itemID"))
+	itemID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Item id '%s' is invalid", r.PathValue("itemID")), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Item id '%s' is invalid", r.PathValue("id")), http.StatusBadRequest)
 		return
 	}
 

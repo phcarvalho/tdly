@@ -7,7 +7,7 @@ import (
 
 type Item struct {
 	ID          int
-	BoardID     int
+	BoardID     string
 	Text        string
 	CompletedAt time.Time
 }
@@ -40,12 +40,13 @@ func (m *ItemService) GetByID(id int) (*Item, error) {
 	return &item, nil
 }
 
-func (m *ItemService) GetByBoardID(boardID int) ([]*Item, error) {
+func (m *ItemService) GetByBoardID(boardID string) ([]*Item, error) {
 	stmt := "SELECT id, board_id, text, completed_at FROM items" +
 		"\nWHERE board_id = ?"
 
-	items := []*Item{}
 	rows, err := m.DB.Query(stmt, boardID)
+
+	items := []*Item{}
 	if err != nil {
 		return items, err
 	}
@@ -68,7 +69,7 @@ func (m *ItemService) GetByBoardID(boardID int) ([]*Item, error) {
 	return items, nil
 }
 
-func (m *ItemService) Insert(boardID int, text string) (int, error) {
+func (m *ItemService) Insert(boardID string, text string) (int, error) {
 	stmt := "INSERT INTO items (board_id, text) VALUES (?, ?)"
 
 	res, err := m.DB.Exec(stmt, boardID, text)

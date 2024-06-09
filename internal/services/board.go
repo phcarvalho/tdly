@@ -5,7 +5,7 @@ import (
 )
 
 type Board struct {
-	ID    int
+	ID    string
 	Title string
 }
 
@@ -13,7 +13,7 @@ type BoardService struct {
 	DB *sql.DB
 }
 
-func (m *BoardService) GetByID(id int) (*Board, error) {
+func (m *BoardService) GetByID(id string) (*Board, error) {
 	var board Board
 	stmt := "SELECT id, title FROM boards" +
 		"\nWHERE id = ?"
@@ -33,17 +33,18 @@ func (m *BoardService) GetByID(id int) (*Board, error) {
 	return &board, nil
 }
 
-func (m *BoardService) Insert(title string) (int, error) {
-	stmt := "INSERT INTO boards(title) VALUES(?)"
+func (m *BoardService) Insert(id string) error {
+	stmt := "INSERT INTO boards(id) VALUES (?)"
 
-	res, err := m.DB.Exec(stmt, title)
-	if err != nil {
-		return 0, err
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
+	_, err := m.DB.Exec(stmt, id)
 
-	return int(id), nil
+	return err
+}
+
+func (m *BoardService) Edit(token string, title string) error {
+	stmt := "UPDATE boards SET title = ? WHERE id = ?"
+
+	_, err := m.DB.Exec(stmt, title, token)
+
+	return err
 }

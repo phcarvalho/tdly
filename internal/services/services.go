@@ -1,15 +1,21 @@
 package services
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type Service struct {
-	Board *BoardService
-	Item  *ItemService
-	DB    *sql.DB
+	Board  *BoardService
+	Item   *ItemService
+	Config *ConfigService
+	DB     *sql.DB
 }
 
 func NewService(db *sql.DB) *Service {
-	service := &Service{
+	configService := newConfigService(db)
+
+	return &Service{
+		Config: configService,
 		Board: &BoardService{
 			DB: db,
 		},
@@ -17,6 +23,4 @@ func NewService(db *sql.DB) *Service {
 			DB: db,
 		},
 	}
-
-	return service
 }

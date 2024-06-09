@@ -15,6 +15,11 @@
 		border-bottom: 2px solid #d2bab0;
 	}
 
+	header>h1,
+	header>input {
+		font-size: 32px;
+	}
+
 	main {
 		display: flex;
 		flex-direction: column;
@@ -103,13 +108,13 @@
 
 {{ define "body" }}
 <header>
-	<h1>{{ .Board.Title }}</h1>
+	<h1>Board {{ .Board.ID }}</h1>
 </header>
 <main>
 	<ul id="item-list">
 		{{ range .Items }}{{ template "item" . }}{{ end }}
 	</ul>
-	<form hx-post="/boards/{{ .Board.ID }}/items" hx-target="#item-list" hx-swap="beforeend"
+	<form hx-post="/items" hx-target="#item-list" hx-swap="beforeend"
 		hx-on::after-request="if(event.detail.successful) this.reset()">
 		<input name="text" id="text" autocomplete="off" placeholder="Add a new item" />
 	</form>
