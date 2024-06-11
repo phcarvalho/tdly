@@ -1,4 +1,4 @@
-{{ define "title" }}Tdly{{ end }}
+{{ define "title" }}Tdly.me{{ end }}
 
 {{ define "head" }}
 <style>
@@ -9,11 +9,15 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		gap: 20px;
+		gap: 24px;
 	}
 
 	h1 {
-		font-size: 100px;
+		font-size: 10rem;
+	}
+
+	h1>span {
+		font-size: 5rem;
 	}
 
 	button {
@@ -26,11 +30,24 @@
 		font-weight: 600;
 		color: #846358;
 		cursor: pointer;
+		margin-bottom: 40px;
 
-		transition: opacity ease-in 0.2s;
+		transition: opacity ease-in 0.1s;
 	}
 
 	button:hover {
+		opacity: 70%;
+	}
+
+	li {
+		opacity: 100%;
+		text-align: center;
+		margin: 10px;
+
+		transition: opacity ease-in 0.1s;
+	}
+
+	li:hover {
 		opacity: 70%;
 	}
 </style>
@@ -38,9 +55,21 @@
 
 {{ define "body" }}
 <main>
-	<h1>Tdly</h1>
+	<h1>Tdly<span>.me</span></h1>
 	<form method="post" action="/boards">
 		<button type="submit">Create a Board</button>
 	</form>
+	{{ if . }}
+	<div>
+		<h2>Recently visited</h2>
+		<ul>
+			{{ range . }}
+			<li>
+				<a href="/b/{{ . }}">Board {{ . }}</a>
+			</li>
+			{{ end }}
+		</ul>
+	</div>
+	{{ end }}
 </main>
 {{ end }}

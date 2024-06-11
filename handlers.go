@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/phcarvalho/tdly/internal/services"
 )
@@ -28,13 +29,34 @@ func (a *application) getServeMux() *http.ServeMux {
 	return mux
 }
 
-func getBoardID(r *http.Request) (string, error) {
-	cookie, err := r.Cookie("board")
+func getBoardsFromCookie(r *http.Request) []string {
+	cookie, err := r.Cookie("boards")
 	if err != nil {
-		return "", err
+		return []string{}
 	}
 
-	return cookie.Value, nil
+	return strings.Split(cookie.Value, ",")
+}
+
+func addBoardIDToCookie(w http.ResponseWriter, r *http.Request, id string) {
+	boards := []string{id}
+	for _, curID := range getBoardsFromCookie(r) {
+		if curID != id {
+			boards = append(boards, curID)
+		}
+	}
+
+	cookie := http.Cookie{
+		Name:     "boards",
+		Value:    strings.Join(boards[:5], ","),
+		Path:     "/",
+		MaxAge:   0,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	http.SetCookie(w, &cookie)
 }
 
 func (a *application) handleHomePage(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +72,9 @@ func (a *application) handleHomePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ts.ExecuteTemplate(w, "base", nil)
+	boards := getBoardsFromCookie(r)
+
+	err = ts.ExecuteTemplate(w, "base", boards)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -94,6 +118,7 @@ func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, &cookie)
+	addBoardIDToCookie(w, r, id)
 
 	items, err := a.Service.Item.GetByBoardID(board.ID)
 	if err != nil {
@@ -128,11 +153,13 @@ func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) handleItemCreate(w http.ResponseWriter, r *http.Request) {
-	boardID, err := getBoardID(r)
+	cookie, err := r.Cookie("board")
 	if err != nil {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
+
+	boardID := cookie.Value
 
 	text := r.FormValue("text")
 	if text == "" {
@@ -169,11 +196,13 @@ func (a *application) handleItemCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) handleItemDelete(w http.ResponseWriter, r *http.Request) {
-	boardID, err := getBoardID(r)
+	cookie, err := r.Cookie("board")
 	if err != nil {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
+
+	boardID := cookie.Value
 
 	itemID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -196,11 +225,13 @@ func (a *application) handleItemDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) handleItemToggle(w http.ResponseWriter, r *http.Request) {
-	boardID, err := getBoardID(r)
+	cookie, err := r.Cookie("board")
 	if err != nil {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
+
+	boardID := cookie.Value
 
 	itemID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {

@@ -1,4 +1,4 @@
-{{ define "title" }}Tdly - {{ .Board.Title }}{{ end }}
+{{ define "title" }}Tdly.me - Board {{ .Board.ID }}{{ end }}
 
 {{ define "head" }}
 <style>
@@ -10,14 +10,15 @@
 		display: flex;
 		align-items: center;
 		height: 80px;
-		margin: 0 20px;
-		padding: 0 10px;
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 0 20px;
 		border-bottom: 2px solid #d2bab0;
 	}
 
 	header>h1,
 	header>input {
-		font-size: 32px;
+		font-size: 3.2rem;
 	}
 
 	main {
@@ -25,23 +26,30 @@
 		flex-direction: column;
 		gap: 8px;
 
+		max-width: 1200px;
+		margin: 0 auto;
 		height: calc(100vh - 130px);
 		overflow: hidden;
-		padding: 20px 30px;
+		padding: 20px;
 	}
 
 	footer {
-		height: 50px;
 		display: flex;
 		align-items: center;
 		justify-content: end;
-		padding: 0 10px;
-		padding-bottom: 10px;
+		height: 50px;
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 0 10px 10px;
 	}
 
 	footer>a {
 		color: #d2bab0;
-		font-size: 32px;
+		font-size: 3.2rem;
+	}
+
+	footer>a>span {
+		font-size: 0.5em;
 	}
 
 	ul {
@@ -64,6 +72,7 @@
 	}
 
 	li p {
+		font-size: 2.4rem;
 		text-decoration: none;
 	}
 
@@ -90,7 +99,7 @@
 		outline: none;
 		border: none;
 
-		font-size: 16px;
+		font-size: 1.6rem;
 		font-weight: 600;
 		color: #ff8787;
 	}
@@ -121,7 +130,7 @@
 </main>
 <footer>
 	<a href="/">
-		Tdly
+		Tdly<span>.me</span>
 	</a>
 </footer>
 {{ end }}

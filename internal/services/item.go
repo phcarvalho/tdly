@@ -42,7 +42,8 @@ func (m *ItemService) GetByID(id int) (*Item, error) {
 
 func (m *ItemService) GetByBoardID(boardID string) ([]*Item, error) {
 	stmt := "SELECT id, board_id, text, completed_at FROM items" +
-		"\nWHERE board_id = ?"
+		"\nWHERE board_id = ?" +
+		"\nORDER BY completed_at ASC"
 
 	rows, err := m.DB.Query(stmt, boardID)
 
