@@ -46,9 +46,13 @@ func addBoardIDToCookie(w http.ResponseWriter, r *http.Request, id string) {
 		}
 	}
 
+	if len(boards) > 5 {
+		boards = boards[:5]
+	}
+
 	cookie := http.Cookie{
 		Name:     "boards",
-		Value:    strings.Join(boards[:5], ","),
+		Value:    strings.Join(boards, ","),
 		Path:     "/",
 		MaxAge:   0,
 		HttpOnly: true,
