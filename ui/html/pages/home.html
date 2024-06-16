@@ -38,18 +38,6 @@
 	button:hover {
 		opacity: 70%;
 	}
-
-	li {
-		opacity: 100%;
-		text-align: center;
-		margin: 10px;
-
-		transition: opacity ease-in 0.1s;
-	}
-
-	li:hover {
-		opacity: 70%;
-	}
 </style>
 {{end}}
 
@@ -59,17 +47,5 @@
 	<form method="post" action="/boards">
 		<button type="submit">Create a Board</button>
 	</form>
-	{{ if . }}
-	<div>
-		<h2>Recently visited</h2>
-		<ul>
-			{{ range . }}
-			<li>
-				<a href="/b/{{ . }}">Board {{ . }}</a>
-			</li>
-			{{ end }}
-		</ul>
-	</div>
-	{{ end }}
 </main>
 {{ end }}

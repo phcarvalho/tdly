@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -10,9 +11,10 @@ import (
 )
 
 type application struct {
-	DB      *sql.DB
-	Service *services.Service
-	Router  *http.ServeMux
+	db            *sql.DB
+	service       *services.Service
+	router        *http.ServeMux
+	templateCache map[string]*template.Template
 }
 
 func (a *application) init() {
@@ -21,16 +23,20 @@ func (a *application) init() {
 		log.Fatal(err)
 	}
 
-	a.DB = db
-	a.Service = services.NewService(db)
-	a.Router = a.getServeMux()
+	a.db = db
+	a.service = services.NewService(db)
+	a.router = a.getServeMux()
+	a.templateCache, err = newTemplateCache()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Println("starting application")
 }
 
 func (a *application) close() {
 	log.Println("exiting application")
-	a.DB.Close()
+	a.db.Close()
 }
 
 func main() {
@@ -40,7 +46,7 @@ func main() {
 	// TODO: handle graceful shutdowns and interrupts
 	defer app.close()
 
-	if err := http.ListenAndServe(":4000", app.Router); err != nil {
+	if err := http.ListenAndServe(":4000", app.router); err != nil {
 		log.Fatal(err)
 	}
 }

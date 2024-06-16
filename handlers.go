@@ -2,11 +2,9 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/phcarvalho/tdly/internal/services"
 )
@@ -29,56 +27,10 @@ func (a *application) getServeMux() *http.ServeMux {
 	return mux
 }
 
-func getBoardsFromCookie(r *http.Request) []string {
-	cookie, err := r.Cookie("boards")
-	if err != nil {
-		return []string{}
-	}
-
-	return strings.Split(cookie.Value, ",")
-}
-
-func addBoardIDToCookie(w http.ResponseWriter, r *http.Request, id string) {
-	boards := []string{id}
-	for _, curID := range getBoardsFromCookie(r) {
-		if curID != id {
-			boards = append(boards, curID)
-		}
-	}
-
-	if len(boards) > 5 {
-		boards = boards[:5]
-	}
-
-	cookie := http.Cookie{
-		Name:     "boards",
-		Value:    strings.Join(boards, ","),
-		Path:     "/",
-		MaxAge:   0,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	http.SetCookie(w, &cookie)
-}
-
 func (a *application) handleHomePage(w http.ResponseWriter, r *http.Request) {
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/pages/home.html",
-	}
+	ts := a.templateCache["home.html"]
 
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	boards := getBoardsFromCookie(r)
-
-	err = ts.ExecuteTemplate(w, "base", boards)
+	err := ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -86,14 +38,14 @@ func (a *application) handleHomePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) handleBoardCreate(w http.ResponseWriter, r *http.Request) {
-	id, err := a.Service.Config.GetNextID()
+	id, err := a.service.Config.GetNextID()
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	err = a.Service.Board.Insert(id)
+	err = a.service.Board.Insert(id)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -106,7 +58,7 @@ func (a *application) handleBoardCreate(w http.ResponseWriter, r *http.Request) 
 func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	board, err := a.Service.Board.GetByID(id)
+	board, err := a.service.Board.GetByID(id)
 	if err != nil {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
@@ -122,9 +74,8 @@ func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, &cookie)
-	addBoardIDToCookie(w, r, id)
 
-	items, err := a.Service.Item.GetByBoardID(board.ID)
+	items, err := a.service.Item.GetByBoardID(board.ID)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -136,18 +87,7 @@ func (a *application) handleBoardPage(w http.ResponseWriter, r *http.Request) {
 		Items: items,
 	}
 
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/pages/board.html",
-		"./ui/html/partials/item.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
+	ts := a.templateCache["board.html"]
 
 	err = ts.ExecuteTemplate(w, "base", data)
 	if err != nil {
@@ -171,26 +111,21 @@ func (a *application) handleItemCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemID, err := a.Service.Item.Insert(boardID, text)
+	itemID, err := a.service.Item.Insert(boardID, text)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	item, err := a.Service.Item.GetByID(itemID)
+	item, err := a.service.Item.GetByID(itemID)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	ts, err := template.ParseFiles("./ui/html/partials/item.html")
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
+	ts := a.templateCache["board.html"]
 
 	err = ts.ExecuteTemplate(w, "item", item)
 	if err != nil {
@@ -214,13 +149,13 @@ func (a *application) handleItemDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := a.Service.Item.GetByID(itemID)
+	item, err := a.service.Item.GetByID(itemID)
 	if err != nil || item.BoardID != boardID {
 		http.Error(w, fmt.Sprintf("Item %d not found", itemID), http.StatusNotFound)
 		return
 	}
 
-	err = a.Service.Item.DeleteByID(itemID)
+	err = a.service.Item.DeleteByID(itemID)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	}
@@ -243,32 +178,27 @@ func (a *application) handleItemToggle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := a.Service.Item.GetByID(itemID)
+	item, err := a.service.Item.GetByID(itemID)
 	if err != nil || item.BoardID != boardID {
 		http.Error(w, fmt.Sprintf("Item %d not found", itemID), http.StatusNotFound)
 		return
 	}
 
-	err = a.Service.Item.ToggleByID(itemID)
+	err = a.service.Item.ToggleByID(itemID)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	item, err = a.Service.Item.GetByID(itemID)
+	item, err = a.service.Item.GetByID(itemID)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	ts, err := template.ParseFiles("./ui/html/partials/item.html")
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
+	ts := a.templateCache["board.html"]
 
 	err = ts.ExecuteTemplate(w, "item", item)
 	if err != nil {
